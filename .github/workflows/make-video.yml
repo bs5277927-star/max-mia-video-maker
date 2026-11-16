@@ -19,14 +19,26 @@ jobs:
 
       - name: Make video - Zoom Pan Rotate
         run: |
+          ls -R images
+          # Koi bhi naam ho - pehli 4 images ko 1,2,3,4 bana do
+          i=1
+          for f in images/*; do
+            if [ "$f" != "images/.keep" ]; then
+              cp "$f" "img$i.jpg"
+              echo "Using $f as img$i.jpg"
+              i=$((i+1))
+              if [ $i -gt 4 ]; then break; fi
+            fi
+          done
+          ls -lh img*.jpg
           # Part 1 - Zoom-In
-          ffmpeg -y -loop 1 -i images/1.jpg -vf "scale=2160:3840,zoompan=z='min(zoom+0.0015,1.5)':d=240:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part1.mp4
+          ffmpeg -y -loop 1 -i img1.jpg -vf "scale=2160:3840,zoompan=z='min(zoom+0.0015,1.5)':d=240:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part1.mp4
           # Part 2 - Pan Left to Right + Rotate Left to Right
-          ffmpeg -y -loop 1 -i images/2.jpg -vf "scale=2160:3840,zoompan=z='1.2':d=240:x='(iw-iw/zoom)*on/240':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part2.mp4
+          ffmpeg -y -loop 1 -i img2.jpg -vf "scale=2160:3840,zoompan=z='1.2':d=240:x='(iw-iw/zoom)*on/240':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part2.mp4
           # Part 3 - Zoom-Out + Pan Up-Down + Rotate Up Down
-          ffmpeg -y -loop 1 -i images/3.jpg -vf "scale=2160:3840,zoompan=z='max(1.5-0.0015*on,1.0)':d=240:x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*on/240':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part3.mp4
+          ffmpeg -y -loop 1 -i img3.jpg -vf "scale=2160:3840,zoompan=z='max(1.5-0.0015*on,1.0)':d=240:x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*on/240':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part3.mp4
           # Part 4 - Rotate 5 to 10 degree + Pan Right to Left + Rotate Right Left
-          ffmpeg -y -loop 1 -i images/4.jpg -vf "scale=2160:3840,zoompan=z='1.2':d=240:x='(iw-iw/zoom)*(1-on/240)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,rotate='0.08*sin(2*PI*t/8)':c=black:ow=1080:oh=1920" -t 8 -c:v libx264 -pix_fmt yuv420p part4.mp4
+          ffmpeg -y -loop 1 -i img4.jpg -vf "scale=2160:3840,zoompan=z='1.2':d=240:x='(iw-iw/zoom)*(1-on/240)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,rotate='0.08*sin(2*PI*t/8)':c=black:ow=1080:oh=1920" -t 8 -c:v libx264 -pix_fmt yuv420p part4.mp4
           echo "file 'part1.mp4'" > list.txt
           echo "file 'part2.mp4'" >> list.txt
           echo "file 'part3.mp4'" >> list.txt
