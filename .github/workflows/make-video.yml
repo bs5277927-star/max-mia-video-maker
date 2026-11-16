@@ -1,0 +1,46 @@
+# NOTE: Character should move - Max hand, head, eye blink
+# Right now FFmpeg only moves camera - Zoom, Pan, Rotate. Real character move will be added later with AI video model.
+# Movement in this code: Zoom-In, Zoom-Out, Pan Left to Right, Pan Right to Left, Pan Up-Down, Rotate Up, Rotate Down, Rotate Left, Rotate Right, Rotate 5 to 10 degree
+
+name: Make Video
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Make video - Zoom Pan Rotate
+        run: |
+          # Part 1 - Zoom-In
+          ffmpeg -y -loop 1 -i images/1.jpg -vf "scale=2160:3840,zoompan=z='min(zoom+0.0015,1.5)':d=240:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part1.mp4
+          # Part 2 - Pan Left to Right + Rotate Left to Right
+          ffmpeg -y -loop 1 -i images/2.jpg -vf "scale=2160:3840,zoompan=z='1.2':d=240:x='(iw-iw/zoom)*on/240':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part2.mp4
+          # Part 3 - Zoom-Out + Pan Up-Down + Rotate Up Down
+          ffmpeg -y -loop 1 -i images/3.jpg -vf "scale=2160:3840,zoompan=z='max(1.5-0.0015*on,1.0)':d=240:x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*on/240':s=1080x1920:fps=30" -t 8 -c:v libx264 -pix_fmt yuv420p part3.mp4
+          # Part 4 - Rotate 5 to 10 degree + Pan Right to Left + Rotate Right Left
+          ffmpeg -y -loop 1 -i images/4.jpg -vf "scale=2160:3840,zoompan=z='1.2':d=240:x='(iw-iw/zoom)*(1-on/240)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,rotate='0.08*sin(2*PI*t/8)':c=black:ow=1080:oh=1920" -t 8 -c:v libx264 -pix_fmt yuv420p part4.mp4
+          echo "file 'part1.mp4'" > list.txt
+          echo "file 'part2.mp4'" >> list.txt
+          echo "file 'part3.mp4'" >> list.txt
+          echo "file 'part4.mp4'" >> list.txt
+          ffmpeg -y -f concat -safe 0 -i list.txt -c copy final-no-audio.mp4
+          if [ -f audio.mp3 ]; then
+            ffmpeg -y -i final-no-audio.mp4 -i audio.mp3 -c:v copy -c:a aac -shortest final.mp4
+          else
+            cp final-no-audio.mp4 final.mp4
+          fi
+          ls -lh final.mp4
+
+      - name: Upload video
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-video
+          path: final.mp4
